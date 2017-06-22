@@ -1,3 +1,5 @@
+const snapshotMaker = require('../classes/delta-snapshot');
+
 var oldValues = {};
 
 function getKey(pathIndexTriggered, pathIndex, snapshot) {
@@ -45,58 +47,24 @@ function getPath(pathDescription, pathIndex, snapshot) {
 }
 
 function createCallbackEvent(pathDescription, pathIndex, snapshot) {
-  var previousValue = oldValues[getPath(pathDescription, pathIndex, snapshot)];
+  const path = getPath(pathDescription, pathIndex, snapshot);
 
-  oldValues[getPath(pathDescription, pathIndex, snapshot)] = snapshot.val();
+  var previousValue = oldValues[path];
+
+  const newValue = snapshot.val();
+
+  oldValues[path] = newValue;
 
   return {
     params: createParams(pathDescription, pathIndex, snapshot),
-    data: Object.assign(snapshot, {
-      exists() {
-        return snapshot.val() !== null;
-      },
-      changed() {
-        if (this.exists() && !this.previous.exists()) {
-          return true;
-        }
-        if (
-          Object.keys(
-            snapshot.val().length !== Object.keys(this.previous.val()).length
-          )
-        ) {
-          return true;
-        }
-
-        var newVal = snapshot.val();
-        var oldVal = this.previous.val();
-        if (
-          Object.keys(newVal).reduce(function(hasChanged, valKey) {
-            if (hasChanged) {
-              return true;
-            }
-
-            return newVal[valKey] !== oldVal[valKey];
-          }, false)
-        ) {
-          return true;
-        }
-
-        return false;
-      },
-      previous: {
-        val() {
-          return previousValue;
-        },
-        exists() {
-          return previousValue !== undefined;
-        },
-      },
-    }),
+    data: snapshotMaker(newValue, previousValue, path)
   };
 }
 
 function getValue(pathDescription, pathIndex, snapshot) {
   var child = snapshot.val();
+
+  //Make this actually look at the PATH
   while (pathIndex < pathDescription.length - 1) {
     child = child[Object.keys(child)[0]];
     pathIndex++;
