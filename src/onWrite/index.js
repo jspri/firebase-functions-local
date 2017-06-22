@@ -111,6 +111,11 @@ function createEvent(ref, pathDescription, pathIndex, cb) {
 
   var initialDataLoaded = false;
   ref.on('child_added', function(snapshot) {
+    //Stop fanning out
+    if (snapshot.ref.key !== pathDescription[pathIndex].name && !pathDescription[pathIndex].isParam) {
+      return
+    }
+
     if (hasMorePathKeys) {
       createEvent(snapshot.ref, pathDescription, pathIndex + 1, cb);
     }
