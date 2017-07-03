@@ -1,6 +1,7 @@
+const admin = require('firebase-admin');
 const snapshotMaker = require('../classes/delta-snapshot');
 
-var oldValues = {};
+const oldValues = {};
 
 function getKey(pathIndexTriggered, pathIndex, snapshot) {
   if (pathIndexTriggered > pathIndex) {
@@ -46,15 +47,105 @@ function getPath(pathDescription, pathIndex, snapshot) {
     .join('/');
 }
 
+_LISTENERS = [];
+
+function addDataListener(pathDescription, cb) {
+  return _LISTENERS.push({
+    pathDescription: pathDescription,
+    callback: cb,
+  });
+}
+
+function getListeners(pathDescription) {
+  //Filter irrelevant listeners
+  let listeners = _LISTENERS;
+
+  let i = 0;
+
+  pathDescription.forEach(currentPathDescription => {
+    listeners = listeners.filter(listener => {
+      let listenerPathDescription = listener.pathDescription;
+
+      if (!listenerPathDescription[i]) {
+        return false;
+      }
+
+      if (listenerPathDescription.isParam) {
+        return true;
+      }
+
+      return listenerPathDescription.name === pathDescription.name;
+    });
+
+    i += 1;
+  });
+
+  return listeners;
+}
+
+function newData(pathDescription, snapshot) {
+  const oldData = getData(pathDescription);
+  const newData = snapshot.val();
+
+  setData(pathDescription, newData);
+
+  const listeners = getListeners(pathDescription);
+
+  detectChanges(oldData, newData, listeners);
+
+  return;
+}
+
+function getData(pathDescription) {
+  let obj = oldValues;
+
+  for(let i=0;i<pathDescription.length; i++) {
+    let currentPathDescription = pathDescription[i];
+    let key = currentPathDescription.name;
+
+    //Shouldn't be any parameters here....
+    if (currentPathDescription.isParam) {
+      throw Error("Unexpected path description");
+    }
+
+    if (!(key in obj)) {
+      return null;
+    }
+
+    obj = obj[key];
+  }
+
+  return obj;
+}
+
+function setData(pathDescription, val) {
+  let obj = oldValues;
+
+  for(let i=0;i<pathDescription.length; i++) {
+    let currentPathDescription = pathDescription[i];
+    let key = currentPathDescription.name;
+
+    //Shouldn't be any parameters here....
+    if (currentPathDescription.isParam) {
+      throw Error("Unexpected path description");
+    }
+
+    if (!(key in obj)) {
+      obj[key] = {};
+    }
+
+    obj = obj[key];
+  }
+
+  obj = val;
+
+  return;
+}
+
 function createCallbackEvent(pathDescription, pathIndex, snapshot) {
   const path = getPath(pathDescription, pathIndex, snapshot);
 
-  var previousValue = oldValues[path];
-
-  const newValue = snapshot.val();
-
   oldValues[path] = newValue;
-
   return {
     params: createParams(pathDescription, pathIndex, snapshot),
     data: snapshotMaker(newValue, previousValue, path)
@@ -73,47 +164,38 @@ function getValue(pathDescription, pathIndex, snapshot) {
   return child;
 }
 
-function createEvent(ref, pathDescription, pathIndex, cb) {
-  var pathKey = pathDescription[pathIndex];
-  var hasMorePathKeys = pathIndex < pathDescription.length - 1;
+function createEvent(pathDescription, cb) {
+  //Get rootiest parameter
+  let i = 0;
 
-  var initialDataLoaded = false;
-  ref.on('child_added', function(snapshot) {
-    //Stop fanning out
-    if (snapshot.ref.key !== pathDescription[pathIndex].name && !pathDescription[pathIndex].isParam) {
-      return
-    }
+  for (i;i<pathDescription.length;i++) {
+    let currentPathDescription = pathDescription[i];
 
-    if (hasMorePathKeys) {
-      createEvent(snapshot.ref, pathDescription, pathIndex + 1, cb);
+    if (currentPathDescription.isParam) {
+      break;
     }
-
-    if (initialDataLoaded && pathIndex === pathDescription.length - 1) {
-      cb(createCallbackEvent(pathDescription, pathIndex, snapshot));
-    }
-  });
-  ref.once('value', function(snapshot) {
-    if (initialDataLoaded) {
-      return;
-    }
-    initialDataLoaded = true;
-    if (!hasMorePathKeys) {
-      oldValues[getPath(pathDescription, pathIndex - 1, snapshot)] = getValue(
-        pathDescription,
-        pathIndex - 1,
-        snapshot
-      );
-    }
-  });
-
-  if (!hasMorePathKeys) {
-    ref.on('child_changed', function(snapshot) {
-      cb(createCallbackEvent(pathDescription, pathIndex, snapshot));
-    });
   }
+
+  //Listen to one above
+  const listenDescription = pathDescription.slice(0, i);
+  const listenPath = getPath(listenDescription, i - 1);
+
+  addDataListener(pathDescription, cb);
+
+  let first = true;
+
+  admin.database().ref(listenPath).on('value', snapshot => {
+    newData(listenDescription, snapshot);
+
+    //Add listener once you have delta for the snapshot
+    if (!first) {
+      first = true;
+      //addDataListener(pathDescription, cb);
+    }
+  });
 }
 
-function onWrite(path, cb, admin) {
+function onWrite(path, cb) {
   var pathDescription = path
     .split('/')
     .filter(str => str !== '')
@@ -127,9 +209,7 @@ function onWrite(path, cb, admin) {
       });
     }, []);
 
-  var ref = admin.database().ref(pathDescription[0].name);
-
-  createEvent(ref, pathDescription, 1, cb);
+  createEvent(pathDescription, cb);
 }
 
 module.exports = onWrite;
