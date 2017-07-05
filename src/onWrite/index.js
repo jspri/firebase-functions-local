@@ -162,7 +162,7 @@ function detectChanges(oldData, newData, listeners, depth, _params) {
           changes.push(...detectChanges(_oldObj, _newObj, [listener], i+1, _params));
         })
 
-        break;
+        return;
       }
 
       if (!isObj(newObj) || !(key in newObj)) {
