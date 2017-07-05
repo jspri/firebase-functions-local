@@ -59,7 +59,8 @@ function newData(pathDescription, snapshot) {
 
   const listeners = getListeners(pathDescription);
 
-  const changes = detectChanges(oldData, newData, listeners);
+  const depth = pathDescription.length;
+  const changes = detectChanges(oldData, newData, listeners, depth);
 
   changes.forEach(createCallbackEvent);
 
@@ -90,6 +91,10 @@ function getData(pathDescription) {
 
 function setData(pathDescription, val) {
   let obj = oldValues;
+
+  if (val === null) {
+    return;
+  }
 
   for(let i=0;i<pathDescription.length; i++) {
     let currentPathDescription = pathDescription[i];
@@ -122,7 +127,7 @@ class Change {
   }
 }
 
-function detectChanges(oldData, newData, listeners, depth=1, _params) {
+function detectChanges(oldData, newData, listeners, depth, _params) {
   const changes = [];
   
   listeners.forEach(listener => {
@@ -156,14 +161,6 @@ function detectChanges(oldData, newData, listeners, depth=1, _params) {
         break;
       }
 
-      function isObj(obj) {
-        if (obj === null) {
-          return false;
-        }
-
-        return typeof obj === 'object';
-      }
-
       if (!isObj(newObj) || !(key in newObj)) {
         newObj = null;
       } else {
@@ -191,6 +188,14 @@ function detectChanges(oldData, newData, listeners, depth=1, _params) {
   });
 
   return changes;
+}
+
+function isObj(obj) {
+  if (obj === null) {
+    return false;
+  }
+
+  return typeof obj === 'object';
 }
 
 function createCallbackEvent(change) {
