@@ -86,15 +86,17 @@ function getData(pathDescription) {
     obj = obj[key];
   }
 
-  return JSON.parse(JSON.stringify(obj));
+  const stringify = JSON.stringify(obj);
+
+  if (stringify === '{}') {
+    return null;
+  }
+
+  return JSON.parse(stringify);
 }
 
 function setData(pathDescription, val) {
   let obj = oldValues;
-
-  if (val === null) {
-    return;
-  }
 
   for(let i=0;i<pathDescription.length; i++) {
     let currentPathDescription = pathDescription[i];
@@ -112,7 +114,7 @@ function setData(pathDescription, val) {
     obj = obj[key];
   }
 
-  Object.assign(obj, val);
+  obj = val;
 
   return;
 }
@@ -147,8 +149,10 @@ function detectChanges(oldData, newData, listeners, depth, _params) {
       if (currentPathDescription.isParam) {
         let newKeys = newObj ? Object.keys(newObj) : [];
         let oldKeys = oldObj ? Object.keys(oldObj): [];
+
+        let keySet = new Set(newKeys.concat(oldKeys));
         
-        newKeys.concat(oldKeys).forEach(key => {
+        keySet.forEach(key => {
           let _oldObj = oldObj ? oldObj[key] : null;
           let _newObj = newObj ? newObj[key] : null;
 
