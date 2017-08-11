@@ -97,10 +97,12 @@ function getData(pathDescription) {
 
 function setData(pathDescription, val) {
   let obj = oldValues;
+  let parent;
+  let key;
 
   for(let i=0;i<pathDescription.length; i++) {
     let currentPathDescription = pathDescription[i];
-    let key = currentPathDescription.name;
+    key = currentPathDescription.name;
 
     //Shouldn't be any parameters here....
     if (currentPathDescription.isParam) {
@@ -111,10 +113,11 @@ function setData(pathDescription, val) {
       obj[key] = {};
     }
 
+    parent = obj;
     obj = obj[key];
   }
 
-  obj = val;
+  parent[key] = val;
 
   return;
 }
