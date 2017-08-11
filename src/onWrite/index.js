@@ -79,7 +79,7 @@ function getData(pathDescription) {
       throw Error('Unexpected path description');
     }
 
-    if (!(key in obj)) {
+    if (obj == null || !(key in obj)) {
       return null;
     }
 
@@ -103,6 +103,10 @@ function setData(pathDescription, val) {
   for(let i=0;i<pathDescription.length; i++) {
     let currentPathDescription = pathDescription[i];
     key = currentPathDescription.name;
+
+    if (obj == null) {
+      parent[key] = obj = {};
+    }
 
     //Shouldn't be any parameters here....
     if (currentPathDescription.isParam) {
