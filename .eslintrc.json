@@ -1,0 +1,26 @@
+{
+    "extends": [
+        //"airbnb-base",
+        "eslint:recommended"
+    ],
+    "rules": {
+        //"semi": "error",
+        //"quotes": ["error", "single"],
+        "no-console": "off",
+        "no-unused-vars": "error"
+        //"object-curly-spacing":["error", "always"],
+        //"newline-per-chained-call": ["error", { "ignoreChainWithDepth" : 4 }],
+        //"comma-spacing": ["error", { "before" : false, "after" : true }]
+    },
+    "plugins": [
+        //"import"
+    ],
+    "parserOptions": {
+        "ecmaVersion": 8
+    },
+    "env": {
+        "node": true,
+        "mocha": true,
+        "es6": true
+    }
+}
