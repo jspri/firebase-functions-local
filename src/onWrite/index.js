@@ -1,8 +1,6 @@
 const admin = require('firebase-admin');
 const snapshotMaker = require('../classes/delta-snapshot');
 
-const oldValues = {};
-
 function getPath(pathDescription, params) {
   return pathDescription
     .map(currentPathDescription => {
@@ -15,59 +13,35 @@ function getPath(pathDescription, params) {
     .join('/');
 }
 
-const _LISTENERS = [];
-
-function addListener(pathDescription, cb) {
-  return _LISTENERS.push({
+function createListener(pathDescription, cb) {
+  return {
     pathDescription: pathDescription,
     callback: cb,
-  });
+    oldValues: {},
+  };
 }
 
-function getListeners(pathDescription) {
-  //Gets listeners deeper than or equal to path description;
-  let listeners = _LISTENERS;
-
-  let i = 0;
-
-  pathDescription.forEach(currentPathDescription => {
-    listeners = listeners.filter(listener => {
-      let listenerPathDescription = listener.pathDescription[i];
-
-      if (!listenerPathDescription) {
-        return false;
-      }
-
-      if (listenerPathDescription.isParam) {
-        return true;
-      }
-
-      return listenerPathDescription.name === currentPathDescription.name;
-    });
-
-    i += 1;
-  });
-
-  return listeners;
-}
-
-function newData(pathDescription, snapshot) {
-  const oldData = getData(pathDescription);
+function newData(listener, pathDescription, snapshot, first) {
   const newData = snapshot.val();
 
-  setData(pathDescription, newData);
+  const oldValues = listener.oldValues;
+  const oldData = getData(pathDescription, oldValues);
+  
+  setData(pathDescription, newData, oldValues);
 
-  const listeners = getListeners(pathDescription);
+  if (first) {
+    return;
+  }
 
   const depth = pathDescription.length;
-  const changes = detectChanges(oldData, newData, listeners, depth);
+  const changes = detectChanges(oldData, newData, listener, depth);
 
   changes.forEach(createCallbackEvent);
 
   return;
 }
 
-function getData(pathDescription) {
+function getData(pathDescription, oldValues) {
   let obj = oldValues;
 
   for(let i=0;i<pathDescription.length; i++) {
@@ -95,7 +69,7 @@ function getData(pathDescription) {
   return JSON.parse(stringify);
 }
 
-function setData(pathDescription, val) {
+function setData(pathDescription, val, oldValues) {
   let obj = oldValues;
   let parent;
   let key;
@@ -136,67 +110,63 @@ class Change {
   }
 }
 
-function detectChanges(oldData, newData, listeners, depth, _params) {
+function detectChanges(oldData, newData, listener, depth, _params) {
   const changes = [];
   
-  listeners.forEach(listener => {
-    const pathDescription = listener.pathDescription;
-    const cb = listener.callback;
+  const pathDescription = listener.pathDescription;
+  const cb = listener.callback;
 
-    let newObj = newData;
-    let oldObj = oldData;
-    
-    const params = _params || {};
+  let newObj = newData;
+  let oldObj = oldData;
+  
+  const params = _params || {};
 
-    for(let i=depth;i<pathDescription.length; i++) {
-      let currentPathDescription = pathDescription[i];
-      let key = currentPathDescription.name;
+  for(let i=depth;i<pathDescription.length; i++) {
+    let currentPathDescription = pathDescription[i];
+    let key = currentPathDescription.name;
 
-      //Fork into multiple!!
-      if (currentPathDescription.isParam) {
-        let newKeys = newObj ? Object.keys(newObj) : [];
-        let oldKeys = oldObj ? Object.keys(oldObj): [];
+    //Fork into multiple!!
+    if (currentPathDescription.isParam) {
+      let newKeys = newObj ? Object.keys(newObj) : [];
+      let oldKeys = oldObj ? Object.keys(oldObj) : [];
 
-        let keySet = new Set(newKeys.concat(oldKeys));
-        
-        keySet.forEach(key => {
-          let _oldObj = oldObj ? oldObj[key] : null;
-          let _newObj = newObj ? newObj[key] : null;
+      let keySet = new Set(newKeys.concat(oldKeys));
+      
+      keySet.forEach(key => {
+        let _oldObj = oldObj ? oldObj[key] : null;
+        let _newObj = newObj ? newObj[key] : null;
 
-          let _params = Object.assign({}, params);
-          _params[currentPathDescription.name] = key;
+        let _params = Object.assign({}, params);
+        _params[currentPathDescription.name] = key;
 
-          changes.push(...detectChanges(_oldObj, _newObj, [listener], i+1, _params));
-        })
+        changes.push(...detectChanges(_oldObj, _newObj, listener, i+1, _params));
+      })
 
-        return;
-      }
-
-      if (!isObj(newObj) || !(key in newObj)) {
-        newObj = null;
-      } else {
-        newObj = newObj[key];
-      }
-
-      if (!isObj(oldObj) || !(key in oldObj)) {
-        oldObj = null;
-      } else {
-        oldObj = oldObj[key];
-      }
+      return changes;
     }
 
-    if (JSON.stringify(newObj) === JSON.stringify(oldObj)) {
-      return;
+    if (!isObj(newObj) || !(key in newObj)) {
+      newObj = null;
+    } else {
+      newObj = newObj[key];
     }
 
-    const path = getPath(pathDescription, params);
+    if (!isObj(oldObj) || !(key in oldObj)) {
+      oldObj = null;
+    } else {
+      oldObj = oldObj[key];
+    }
+  }
 
-    const change = new Change(oldObj, newObj, params, path, cb);
+  if (JSON.stringify(newObj) === JSON.stringify(oldObj)) {
+    return changes;
+  }
 
-    changes.push(change);
+  const path = getPath(pathDescription, params);
 
-    return
-  });
+  const change = new Change(oldObj, newObj, params, path, cb);
+
+  changes.push(change);
 
   return changes;
 }
@@ -234,15 +204,15 @@ function createEvent(pathDescription, cb) {
   const listenDescription = pathDescription.slice(0, i);
   const listenPath = getPath(listenDescription);
 
+  const listener = createListener(pathDescription, cb);
+
   let first = true;
 
-  admin.database().ref(listenPath).on('value', snapshot => {
-    newData(listenDescription, snapshot);
+  admin.database().ref(listenPath).on('value', snapshot => { // Data listener
+    newData(listener, listenDescription, snapshot, first); // Don't fire listeners on first pull
 
-    //Add listener once you have delta for the snapshot
     if (first) {
-      first = false;
-      addListener(pathDescription, cb);
+      first = false;      
     }
   });
 }
