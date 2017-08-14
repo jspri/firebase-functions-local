@@ -13,7 +13,7 @@ module.exports = function(admin, options) {
   var port = options.port || 3001
   var publicPath = options.publicPath || 'public'
   var app = express();
-  var httpListener = function (req, res, next) {
+  var httpListener = function (req, res) {
     res.status(404).send('You have not added an "onRequest" handler for your firebase functions');
   };
 

@@ -1,6 +1,6 @@
 'use strict';
 
-const BASE_LOCATION = '/TEST'
+const BASE_LOCATION = '/TEST' // Root in the firebase db used for tests
 
 require('dotenv').config({silent: true});
 
@@ -19,7 +19,7 @@ const functions = require('../')(admin);
 
 const assert = require('assert');
 
-const SAFE_LATENCY = process.env.SAFE_LATENCY || 500;
+const SAFE_LATENCY = process.env.SAFE_LATENCY || 400;
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
@@ -31,6 +31,13 @@ describe('database', () => {
     // Nuke the database
     admin.database().ref(BASE_LOCATION).remove().then(callback);
   });
+
+  /*
+  after(callback => {
+    // Nuke the database
+    admin.database().ref(BASE_LOCATION).remove().then(callback);
+  });
+  */
 
   describe('onWrite', () => {
     it('should listen to reads', callback => {
@@ -116,19 +123,12 @@ describe('database', () => {
         cats.add(event.params.cat)
 
         i += 1;
-
-        if (i === 2) {
-          assert(cats.has('garfield'));
-          assert(cats.has('oscar'));
-          
-          callback();
-        }
       });
 
       setTimeout(() => admin.database().ref(location).set({ 'garfield': true, 'oscar': true }), SAFE_LATENCY);
       setTimeout(() =>{
         assert.strictEqual(i, 2, 'Wrong number of callbacks')
-        assert.strictEqual(cats.size, 1)
+        assert.strictEqual(cats.size, 2)
 
         assert(cats.has('garfield'));
         assert(cats.has('oscar'));
@@ -136,6 +136,68 @@ describe('database', () => {
         callback()
       }, SAFE_LATENCY * 2); 
     }); 
+  })
+
+  describe('onCreate', () => {
+    it('should listen to objects being created', callback => {
+      const location = newTestLocation();
+      
+      functions.database.ref(location).onCreate(event => {
+        assert.strictEqual(event.data.val(), 'abc123');
+
+        callback();
+      });
+
+      setTimeout(() => admin.database().ref(location).set('abc123'), SAFE_LATENCY);
+    });
+
+    it('should not listen when the object already exists', callback => {
+      const location = newTestLocation();
+
+      admin.database().ref(location).set('abc123').then(() => {
+        functions.database.ref(location).onCreate(() => {
+          throw Error('Should not be called');
+        });
+
+        setTimeout(() => admin.database().ref(location).set('abc123'), SAFE_LATENCY);
+        setTimeout(callback, SAFE_LATENCY * 2);        
+      })
+    })
+  })
+
+  describe('onUpdate', () => {
+    it('should listen to updates', callback => {
+      const location = newTestLocation();
+      
+      functions.database.ref(location).onUpdate(event => {
+        assert.strictEqual(event.data.val(), 'def456');
+
+        callback();
+      });
+
+      setTimeout(() => {
+        admin.database().ref(location).set('abc123')
+        admin.database().ref(location).set('def456')
+      }, SAFE_LATENCY);
+    });
+  })
+
+  describe('onDelete', () => {
+    it('should listen to deletes', callback => {
+      const location = newTestLocation();
+      
+      functions.database.ref(location).onDelete(event => {
+        assert.strictEqual(event.data.val(), null);
+        assert.strictEqual(event.data.previous.val(), 'abc123');
+
+        callback();
+      });
+
+      setTimeout(() => {
+        admin.database().ref(location).set('abc123')
+        admin.database().ref(location).remove();        
+      }, SAFE_LATENCY);
+    });
   })
 });
 

@@ -4,7 +4,8 @@
   "description": "Work locally with firebase functions",
   "main": "src/index.js",
   "scripts": {
-    "test": "cd ./test && mocha -t 5000"
+    "test": "cd ./test && mocha -t 5000",
+    "lint": "eslint ./src && eslint ./test"
   },
   "repository": {
     "type": "git",
@@ -21,7 +22,7 @@
   },
   "homepage": "https://github.com/cerebral/firebase-functions-mock#readme",
   "dependencies": {
-    "express": "^4.15.3",
+    "express": "^4.15.4",
     "firebase-admin": "^5.1.0",
     "firebase-functions": "^0.6.1"
   },
