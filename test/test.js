@@ -1,5 +1,7 @@
 'use strict';
 
+const BASE_LOCATION = '/TEST'
+
 require('dotenv').config({silent: true});
 
 if (!process.env.FIREBASE_SDK_JSON) {
@@ -27,7 +29,7 @@ admin.initializeApp({
 describe('database', () => {
   before(callback => {
     // Nuke the database
-    admin.database().ref().remove().then(callback);
+    admin.database().ref(BASE_LOCATION).remove().then(callback);
   });
 
   describe('onWrite', () => {
@@ -142,5 +144,5 @@ let i = 0;
 function newTestLocation() {
   i += 1;
 
-  return i + '';
+  return BASE_LOCATION + '/' + i;
 }
