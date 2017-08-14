@@ -5,7 +5,7 @@ Work locally with firebase functions
 
 ## Install
 
-`npm install firebase-functions-mock`
+`npm install firebase-functions-local`
 
 ## Supports
 
