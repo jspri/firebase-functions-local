@@ -1,7 +1,7 @@
 # firebase-functions-local
 [![CircleCI](https://circleci.com/gh/Crazometer/firebase-functions-local/tree/master.svg?style=svg)](https://circleci.com/gh/Crazometer/firebase-functions-local/tree/master)
 
-Work locally with firebase functions
+Work locally with firebase functions. Great for developing your functions without having to wait for them to deploy. Also allows for you to attach a debugger and avoid endless `console.log()`s. Uses live data from your firebase realtime db. 
 
 ## Install
 
@@ -37,6 +37,11 @@ if (process.env.NODE_ENV !== 'production') {
 exports.app = functions.https.onRequest(require('./app'));
 exports.publish = functions.database.ref('articles/{uid}/{articleName}').onWrite(require('./publish'));
 ```
+## Limitations
+
+- Functions that have been deployed using `firebase deploy` will also run. These should be disabled before using this library or you may get strange results.
+- In order to generate the delta snapshots the previous values are gathered. This can cause a spike of data use/latency when first starting the app.
+- Unable to listen to paths that have large response items or too many children. https://firebase.google.com/docs/database/usage/limits
 
 ## Credits
 
