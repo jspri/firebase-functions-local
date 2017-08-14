@@ -1,6 +1,6 @@
 {
   "name": "firebase-functions-local",
-  "version": "3.0.0",
+  "version": "3.0.1",
   "description": "Work locally with firebase functions",
   "main": "src/index.js",
   "scripts": {
