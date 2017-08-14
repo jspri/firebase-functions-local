@@ -1,4 +1,4 @@
-# firebase-functions-mock
+# firebase-functions-local
 Work locally with firebase functions
 
 ## Install
@@ -8,7 +8,7 @@ Work locally with firebase functions
 ## Supports
 
 - **onRequest** express app handling
-- **onWrite** database event handling
+- **onWrite**, **onCreate**, **onUpdate**, **onDelete** database event handling
 - Mocks out auth and config
 - Runs static delivery of your public files folder
 
@@ -36,10 +36,8 @@ exports.app = functions.https.onRequest(require('./app'));
 exports.publish = functions.database.ref('articles/{uid}/{articleName}').onWrite(require('./publish'));
 ```
 
-## Limitations
-This project is in its initial state to build the [jsblog.io](https://www.jsblog.io) project. It has a lot of potential for improvements. Although contributions are already made, here are some things to look into:
-
-- Test more scenarios with **onWrite** usage
-
 ## Get going
 To get going with Firebase Functions I highly recommend using [this boilerplate](https://github.com/cerebral/firebase-functions-boilerplate) which has the whole workflow set up for you.
+
+## License
+MIT
