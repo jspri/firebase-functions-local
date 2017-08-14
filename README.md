@@ -1,4 +1,6 @@
 # firebase-functions-local
+[![CircleCI](https://circleci.com/gh/Crazometer/firebase-functions-local/tree/master.svg?style=svg)](https://circleci.com/gh/Crazometer/firebase-functions-local/tree/master)
+
 Work locally with firebase functions
 
 ## Install
