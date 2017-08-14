@@ -15,11 +15,11 @@ if (!process.env.FIREBASE_DATABASE_URL) {
 const serviceAccount = JSON.parse(process.env.FIREBASE_SDK_JSON);
 
 const admin = require('firebase-admin');
-const functions = require('../')(admin);
+const functions = require('../')();
 
 const assert = require('assert');
 
-const SAFE_LATENCY = process.env.SAFE_LATENCY || 400;
+const SAFE_LATENCY = process.env.SAFE_LATENCY || 250;
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
