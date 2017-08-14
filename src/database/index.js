@@ -1,6 +1,8 @@
 const admin = require('firebase-admin');
 const snapshotMaker = require('../classes/delta-snapshot');
 
+const EVENT_TYPES = ['onWrite', 'onCreate', 'onUpdate', 'onDelete']
+
 function getPath(pathDescription, params) {
   return pathDescription
     .map(currentPathDescription => {
@@ -13,9 +15,10 @@ function getPath(pathDescription, params) {
     .join('/');
 }
 
-function createListener(pathDescription, cb) {
+function createListenerDescription(pathDescription, type, cb) {
   return {
     pathDescription: pathDescription,
+    type: type,
     callback: cb,
     oldValues: {},
   };
@@ -188,7 +191,7 @@ function createCallbackEvent(change) {
   change.callback(event);
 }
 
-function createEvent(pathDescription, cb) {
+function createListener(pathDescription, type, cb) {
   //Get rootiest parameter
   let i = 0;
 
@@ -204,7 +207,7 @@ function createEvent(pathDescription, cb) {
   const listenDescription = pathDescription.slice(0, i);
   const listenPath = getPath(listenDescription);
 
-  const listener = createListener(pathDescription, cb);
+  const listener = createListenerDescription(pathDescription, type, cb);
 
   let first = true;
 
@@ -217,7 +220,7 @@ function createEvent(pathDescription, cb) {
   });
 }
 
-function onWrite(path, cb) {
+function createEvent(path, type, cb) {
   var pathDescription = path
     .split('/')
     .filter(str => str !== '')
@@ -231,7 +234,19 @@ function onWrite(path, cb) {
       });
     }, []);
 
-  createEvent(pathDescription, cb);
+  createListener(pathDescription, type, cb);
 }
 
-module.exports = onWrite;
+function databaseEvents(path) {
+  const events = {};
+
+  EVENT_TYPES.forEach(type => {
+    return events[type] = (callback) =>  createEvent(path, type, callback);
+  });
+
+  return events;
+}
+
+module.exports = {
+  ref: (path) => databaseEvents(path)
+}

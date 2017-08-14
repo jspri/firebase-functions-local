@@ -1,5 +1,5 @@
 var express = require('express');
-var onWrite = require('./onWrite');
+var database = require('./database');
 var path = require('path');
 
 module.exports = function(admin, options) {
@@ -38,15 +38,7 @@ module.exports = function(admin, options) {
 
     config: function () { return config },
 
-    database: {
-      ref: function(path) {
-        return {
-          onWrite(cb) {
-            return onWrite(path, cb, admin);
-          },
-        };
-      },
-    },
+    database: database,
 
     https: {
       onRequest: function(cb) {
