@@ -19,7 +19,7 @@ const functions = require('../')();
 
 const assert = require('assert');
 
-const SAFE_LATENCY = process.env.SAFE_LATENCY || 400;
+const SAFE_LATENCY = process.env.SAFE_LATENCY || 250;
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
