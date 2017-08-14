@@ -185,16 +185,20 @@ function createCallbackEvent(change, type, callback) {
     params: change.params,
     data: snapshotMaker(change.newData, change.oldData, change.path)
   };
+  
+  const currentExists = event.data.exists();
+  const previousExists = event.data.previous.exists();
 
-  if (type === 'onCreate' && event.data.previous.exists()) {
+  if (type === 'onCreate' && previousExists) {
     return;
-  } else if (type === 'onUpdate' && !event.data.previous.exists() && !event.data.exists()) {
+  } else if (type === 'onUpdate' && !(previousExists && currentExists)) {
     return;
-  } else if (type === 'onDelete' && event.data.exists()) {
+  } else if (type === 'onDelete' && currentExists) {
     return;
   }
 
-  callback(event);
+  // Avoid firebase-admin catching erros
+  setImmediate(() => callback(event));
 }
 
 function createListener(pathDescription, type, cb) {
