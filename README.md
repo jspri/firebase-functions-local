@@ -38,8 +38,9 @@ exports.app = functions.https.onRequest(require('./app'));
 exports.publish = functions.database.ref('articles/{uid}/{articleName}').onWrite(require('./publish'));
 ```
 
-## Get going
-To get going with Firebase Functions I highly recommend using [this boilerplate](https://github.com/cerebral/firebase-functions-boilerplate) which has the whole workflow set up for you.
+## Credits
+
+Based upon the work by @christianalfoni
 
 ## License
 MIT
