@@ -19,13 +19,16 @@
     {
       "type": "node",
       "request": "launch",
-      "name": "mocha",
+      "name": "Mocha",
       "runtimeExecutable": "mocha",
       "args": [
         "-t",
         "5000"
       ],
-      "cwd": "${workspaceRoot}/test"
+      "cwd": "${workspaceRoot}/test",
+      "windows": {
+        "runtimeExecutable": "mocha.cmd"
+      }
     }
   ]
 }
