@@ -39,7 +39,7 @@ function newData(listener, pathDescription, snapshot, first) {
   const depth = pathDescription.length;
   const changes = detectChanges(oldData, newData, listener, depth);
 
-  changes.forEach(createCallbackEvent);
+  changes.forEach(change => createCallbackEvent(change, listener.type, listener.callback));
 
   return;
 }
@@ -104,12 +104,11 @@ function setData(pathDescription, val, oldValues) {
 }
 
 class Change {
-  constructor(oldData, newData, params, path, callback) {
+  constructor(oldData, newData, params, path) {
     this.oldData = oldData;
     this.newData = newData;
     this.params = params;
     this.path = path;
-    this.callback = callback;
   }
 }
 
@@ -117,7 +116,6 @@ function detectChanges(oldData, newData, listener, depth, _params) {
   const changes = [];
   
   const pathDescription = listener.pathDescription;
-  const cb = listener.callback;
 
   let newObj = newData;
   let oldObj = oldData;
@@ -167,7 +165,7 @@ function detectChanges(oldData, newData, listener, depth, _params) {
 
   const path = getPath(pathDescription, params);
 
-  const change = new Change(oldObj, newObj, params, path, cb);
+  const change = new Change(oldObj, newObj, params, path);
 
   changes.push(change);
 
@@ -182,13 +180,21 @@ function isObj(obj) {
   return typeof obj === 'object';
 }
 
-function createCallbackEvent(change) {
+function createCallbackEvent(change, type, callback) {
   const event = {
     params: change.params,
     data: snapshotMaker(change.newData, change.oldData, change.path)
   };
 
-  change.callback(event);
+  if (type === 'onCreate' && event.data.previous.exists()) {
+    return;
+  } else if (type === 'onUpdate' && !event.data.previous.exists() && !event.data.exists()) {
+    return;
+  } else if (type === 'onDelete' && event.data.exists()) {
+    return;
+  }
+
+  callback(event);
 }
 
 function createListener(pathDescription, type, cb) {
