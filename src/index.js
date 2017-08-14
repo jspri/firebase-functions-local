@@ -2,7 +2,7 @@ var express = require('express');
 var database = require('./database');
 var path = require('path');
 
-module.exports = function(admin, options) {
+module.exports = function(options) {
   if (process.env.NODE_ENV === 'production') {
     throw new Error('You are running firebase-functions-mock in production, DOH! :-)')
   }

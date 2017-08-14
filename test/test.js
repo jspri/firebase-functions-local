@@ -15,7 +15,7 @@ if (!process.env.FIREBASE_DATABASE_URL) {
 const serviceAccount = JSON.parse(process.env.FIREBASE_SDK_JSON);
 
 const admin = require('firebase-admin');
-const functions = require('../')(admin);
+const functions = require('../')();
 
 const assert = require('assert');
 

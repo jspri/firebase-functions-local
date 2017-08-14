@@ -25,7 +25,7 @@ let functions = require('firebase-functions');
 // When in debug mode, override functions with the mock and
 // pass in the instance of "admin" and optional options
 if (process.env.NODE_ENV !== 'production') {
-  functions = require('firebase-functions-mock')(admin, {
+  functions = require('firebase-functions-mock')({
     config: process.env.FIREBASE_CONFIG,
     port: 3001,
     publicPath: 'public'
