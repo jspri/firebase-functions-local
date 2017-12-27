@@ -136,6 +136,18 @@ describe('database', () => {
         callback()
       }, SAFE_LATENCY * 2); 
     }); 
+
+    it('should set adminRef', callback => {
+      const location = newTestLocation();
+      
+      functions.database.ref(location).onWrite(event => {
+        assert(event.data.adminRef.isEqual(admin.database().ref(location)));
+
+        callback();
+      });
+
+      setTimeout(() => admin.database().ref(location).set('abc123'), SAFE_LATENCY);      
+    })
   })
 
   describe('onCreate', () => {
@@ -170,7 +182,8 @@ describe('database', () => {
       const location = newTestLocation();
       
       functions.database.ref(location).onUpdate(event => {
-        assert.strictEqual(event.data.val(), 'def456');
+        assert.strictEqual(event.data.previous.val(), 'abc123')
+        assert.strictEqual(event.data.val(), 'def456')
 
         callback();
       });

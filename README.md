@@ -27,7 +27,7 @@ let functions = require('firebase-functions');
 // When in debug mode, override functions with the mock and
 // pass in the instance of "admin" and optional options
 if (process.env.NODE_ENV !== 'production') {
-  functions = require('firebase-functions-mock')({
+  functions = require('firebase-functions-local')({
     config: process.env.FIREBASE_CONFIG,
     port: 3001,
     publicPath: 'public'
@@ -40,12 +40,13 @@ exports.publish = functions.database.ref('articles/{uid}/{articleName}').onWrite
 ## Limitations
 
 - Functions that have been deployed using `firebase deploy` will also run. These should be disabled before using this library or you may get strange results.
+- `event.data.ref` will always function as an `adminRef`.
 - In order to generate the delta snapshots the previous values are gathered. This can cause a spike of data use/latency when first starting the app.
 - Unable to listen to paths that have large response items or too many children. https://firebase.google.com/docs/database/usage/limits
 
 ## Credits
 
-Based upon the work by @christianalfoni
+Based upon work by @christianalfoni
 
 ## License
 MIT
