@@ -30,8 +30,8 @@
   "homepage": "https://github.com/cerebral/firebase-functions-mock#readme",
   "dependencies": {
     "express": "^4.15.4",
-    "firebase-admin": "^5.1.0",
-    "firebase-functions": "^0.6.1"
+    "firebase-admin": "5.6.0",
+    "firebase-functions": "0.7.5"
   },
   "devDependencies": {
     "dotenv": "^4.0.0",
