@@ -1,6 +1,6 @@
 {
   "name": "firebase-functions-local",
-  "version": "3.0.3",
+  "version": "3.0.4",
   "description": "Work locally with firebase functions",
   "main": "src/index.js",
   "scripts": {
@@ -8,6 +8,9 @@
     "test-ci": "npm run test && npm run lint",
     "lint": "eslint ./src && eslint ./test"
   },
+  "files": [
+    "src"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Crazometer/firebase-functions-local.git"
