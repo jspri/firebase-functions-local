@@ -19,7 +19,7 @@ const functions = require('../')();
 
 const assert = require('assert');
 
-const SAFE_LATENCY = process.env.SAFE_LATENCY || 250;
+const SAFE_LATENCY = process.env.SAFE_LATENCY || 350;
 
 admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
@@ -174,6 +174,33 @@ describe('database', () => {
         setTimeout(() => admin.database().ref(location).set('abc123'), SAFE_LATENCY);
         setTimeout(callback, SAFE_LATENCY * 2);        
       })
+    })
+
+    it('should not trigger when an object is deleted', callback => {
+      const baseLocation = newTestLocation();
+      const listener = baseLocation + '/{id}';
+      const oldTrigger = baseLocation + '/bar';
+      const trigger = baseLocation + '/foo';
+
+      let count = 0;
+
+      admin.database().ref(oldTrigger).set('bar');
+
+      functions.database.ref(listener).onCreate(event => {
+        const id = event.params.id;
+
+        if (!count) {
+          count++
+          admin.database().ref(baseLocation + '/' + id).remove();
+          return;
+        }
+
+        throw Error('Called on delete')
+      });
+
+      setTimeout(() => admin.database().ref(trigger).set('foo'), SAFE_LATENCY);
+
+      setTimeout(callback, SAFE_LATENCY * 2);
     })
   })
 
