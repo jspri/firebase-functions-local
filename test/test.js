@@ -43,8 +43,8 @@ describe('database', () => {
     it('should listen to reads', callback => {
       const location = newTestLocation();
       
-      functions.database.ref(location).onWrite(event => {
-        assert.strictEqual(event.data.val(), 'abc123');
+      functions.database.ref(location).onWrite(change => {
+        assert.strictEqual(change.after.val(), 'abc123');
 
         callback();
       });
@@ -55,8 +55,8 @@ describe('database', () => {
     it('should pass params', callback => {
       const location = newTestLocation();
       
-      functions.database.ref(location + '/{1}/little/{2}').onWrite(event => {
-        assert.deepEqual(event.params, {1: 'hello', 2: 'kitty'});
+      functions.database.ref(location + '/{1}/little/{2}').onWrite((change, context) => {
+        assert.deepEqual(context.params, {1: 'hello', 2: 'kitty'});
 
         callback();
       });
@@ -69,12 +69,12 @@ describe('database', () => {
 
       let i = 0;
 
-      functions.database.ref(location).onWrite(event => {
+      functions.database.ref(location).onWrite(change => {
         if (i === 0) {
           i += 1;
           return;
         }
-        assert.strictEqual(event.data.val(), null);
+        assert.strictEqual(change.after.val(), null);
 
         callback();
       });
@@ -90,16 +90,16 @@ describe('database', () => {
 
       let i = 0;
 
-      functions.database.ref(location).onWrite(event => {
-        assert.deepEqual(event.data.val(), { foo: { bar: 'abc123' }});
+      functions.database.ref(location).onWrite(change => {
+        assert.deepEqual(change.after.val(), { foo: { bar: 'abc123' }});
 
         i += 1;
       });
 
       let j = 0;
 
-      functions.database.ref(location + '/foo/bar').onWrite(event => {
-        assert.strictEqual(event.data.val(), 'abc123');
+      functions.database.ref(location + '/foo/bar').onWrite(change => {
+        assert.strictEqual(change.after.val(), 'abc123');
 
         j += 1;
       });
@@ -119,8 +119,8 @@ describe('database', () => {
       const cats = new Set();
       let i = 0;
 
-      functions.database.ref(location + '/{cat}').onWrite(event => {
-        cats.add(event.params.cat)
+      functions.database.ref(location + '/{cat}').onWrite((change, context) => {
+        cats.add(context.params.cat)
 
         i += 1;
       });
@@ -140,8 +140,8 @@ describe('database', () => {
     it('should set adminRef', callback => {
       const location = newTestLocation();
       
-      functions.database.ref(location).onWrite(event => {
-        assert(event.data.adminRef.isEqual(admin.database().ref(location)));
+      functions.database.ref(location).onWrite(change => {
+        assert(change.after.ref.isEqual(admin.database().ref(location)));
 
         callback();
       });
@@ -154,8 +154,8 @@ describe('database', () => {
     it('should listen to objects being created', callback => {
       const location = newTestLocation();
       
-      functions.database.ref(location).onCreate(event => {
-        assert.strictEqual(event.data.val(), 'abc123');
+      functions.database.ref(location).onCreate(createSnap => {
+        assert.strictEqual(createSnap.val(), 'abc123');
 
         callback();
       });
@@ -186,8 +186,8 @@ describe('database', () => {
 
       admin.database().ref(oldTrigger).set('bar');
 
-      functions.database.ref(listener).onCreate(event => {
-        const id = event.params.id;
+      functions.database.ref(listener).onCreate((createSnap, context) => {
+        const id = context.params.id;
 
         if (!count) {
           count++
@@ -208,9 +208,9 @@ describe('database', () => {
     it('should listen to updates', callback => {
       const location = newTestLocation();
       
-      functions.database.ref(location).onUpdate(event => {
-        assert.strictEqual(event.data.previous.val(), 'abc123')
-        assert.strictEqual(event.data.val(), 'def456')
+      functions.database.ref(location).onUpdate(change => {
+        assert.strictEqual(change.before.val(), 'abc123')
+        assert.strictEqual(change.after.val(), 'def456')
 
         callback();
       });
@@ -226,9 +226,8 @@ describe('database', () => {
     it('should listen to deletes', callback => {
       const location = newTestLocation();
       
-      functions.database.ref(location).onDelete(event => {
-        assert.strictEqual(event.data.val(), null);
-        assert.strictEqual(event.data.previous.val(), 'abc123');
+      functions.database.ref(location).onDelete(deleteSnap => {
+        assert.strictEqual(deleteSnap.val(), 'abc123');
 
         callback();
       });
