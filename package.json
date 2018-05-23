@@ -1,10 +1,10 @@
 {
   "name": "firebase-functions-local",
-  "version": "3.0.5",
+  "version": "4.0.0",
   "description": "Work locally with firebase functions",
   "main": "src/index.js",
   "scripts": {
-    "test": "cd ./test && mocha -t 5000",
+    "test": "cd ./test && mocha -t 5000 --exit",
     "test-ci": "npm run test && npm run lint",
     "lint": "eslint ./src && eslint ./test"
   },
@@ -28,16 +28,16 @@
   ],
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/cerebral/firebase-functions-mock/issues"
+    "url": "https://github.com/Crazometer/firebase-functions-local/issues"
   },
-  "homepage": "https://github.com/cerebral/firebase-functions-mock#readme",
+  "homepage": "https://github.com/Crazometer/firebase-functions-local#readme",
   "dependencies": {
-    "express": "^4.15.4",
-    "firebase-admin": "5.8.2",
-    "firebase-functions": "0.8.1"
+    "express": "^4.16.3",
+    "firebase-admin": "5.12.1",
+    "firebase-functions": "1.0.3"
   },
   "devDependencies": {
-    "dotenv": "^4.0.0",
-    "mocha": "^3.5.0"
+    "dotenv": "^5.0.1",
+    "mocha": "^5.2.0"
   }
 }

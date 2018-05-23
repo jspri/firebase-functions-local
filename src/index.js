@@ -4,7 +4,7 @@ var path = require('path');
 
 module.exports = function(options) {
   if (process.env.NODE_ENV === 'production') {
-    throw new Error('You are running firebase-functions-mock in production, DOH! :-)')
+    throw new Error('You are running firebase-functions-local in production, DOH! :-)')
   }
 
   options = options || {}
@@ -22,13 +22,13 @@ module.exports = function(options) {
     httpListener(req, res, next);
   });
 
-  console.log("firebase-functions-mock listening on port 3001")
+  console.log("firebase-functions-local listening on port 3001")
   app.listen(port);
 
   return {
     auth: {
       user() {
-        console.warn('WARNING: firebase-functions-mock does not support auth events')
+        console.warn('WARNING: firebase-functions-local does not support auth events')
 
         return {
           onCreate(){}
@@ -47,3 +47,5 @@ module.exports = function(options) {
     }
   };
 };
+
+// TODO Fix warning
