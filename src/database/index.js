@@ -1,5 +1,6 @@
 const admin = require('firebase-admin');
-const snapshotMaker = require('../classes/delta-snapshot');
+const snapshotMaker = require('./data-snapshot');
+const fChangeMaker = require('./change');
 
 const EVENT_TYPES = ['onWrite', 'onCreate', 'onUpdate', 'onDelete']
 
@@ -181,14 +182,13 @@ function isObj(obj) {
 }
 
 function createCallbackEvent(change, type, callback) {
-  const event = {
-    params: change.params,
-    data: snapshotMaker(change.newData, change.oldData, change.path)
-  };
+  const newSnap = snapshotMaker(change.newData, change.path);
+  const oldSnap = snapshotMaker(change.oldData, change.path);
   
-  const currentExists = event.data.exists();
-  const previousExists = event.data.previous.exists();
+  const currentExists = newSnap.exists();
+  const previousExists = oldSnap.exists();
 
+  // Check event is correct type
   if (type === 'onCreate' && previousExists) {
     return;
   } else if (type === 'onUpdate' && !(previousExists && currentExists)) {
@@ -197,8 +197,23 @@ function createCallbackEvent(change, type, callback) {
     return;
   }
 
+  const context = {
+    params: change.params,
+  };
+
+  let dataEvent;
+
+  // Create event object
+  if (type === 'onCreate') {
+    dataEvent = newSnap;
+  } else if (type === 'onDelete') {
+    dataEvent = oldSnap;
+  } else {
+    dataEvent = fChangeMaker(oldSnap, newSnap);
+  }
+
   // Avoid firebase-admin catching erros
-  setImmediate(() => callback(event));
+  setImmediate(() => callback(dataEvent, context));
 }
 
 function createListener(pathDescription, type, cb) {
@@ -251,7 +266,7 @@ function databaseEvents(path) {
   const events = {};
 
   EVENT_TYPES.forEach(type => {
-    return events[type] = (callback) =>  createEvent(path, type, callback);
+    return events[type] = (callback) => createEvent(path, type, callback);
   });
 
   return events;
