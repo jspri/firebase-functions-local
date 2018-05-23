@@ -20,10 +20,9 @@ Requires `firebase-functions` version 1+.
 *functions/index.js*
 ```js
 const admin = require('firebase-admin');
-const admin = admin.initializeApp({
-  credential: firebase.credential.cert(JSON.parse(process.env.SERVICE_ACCOUNT)),
-  databaseURL: JSON.parse(process.env.FIREBASE_CONFIG).databaseURL,
-});
+
+// See https://firebase.google.com/docs/admin/setup#initialize_the_sdk
+const admin = admin.initializeApp({/* ... */});
 
 const functions = require('firebase-functions-local')({
   config: {}, // Set functions.config() values
@@ -32,11 +31,11 @@ const functions = require('firebase-functions-local')({
 });
 
 exports.app = functions.https.onRequest(require('./app'));
-exports.publish = functions.database.ref('articles/{uid}/{articleName}').onWrite(require('./publish'));
+exports.publish = functions.database.ref('articles/{uid}/{article}').onWrite(require('./publish'));
 ```
 ## Limitations
 
-- Functions that have been deployed using `firebase deploy` will also run. These should be disabled before using this library or you may get strange results.
+- Functions that have been deployed using `firebase deploy` will run concurrently with `firebase-functions-local`. These should be disabled before using this library or you may get strange results.
 - In order to generate `Change` objects the existing database state has to be loaded on startup. This can cause delays before the local functions become response.
 - Unable to listen to paths that have large response items or too many children. https://firebase.google.com/docs/database/usage/limits
 
