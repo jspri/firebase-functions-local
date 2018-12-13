@@ -15,7 +15,6 @@ if (!process.env.FIREBASE_DATABASE_URL) {
 const serviceAccount = JSON.parse(process.env.FIREBASE_SDK_JSON);
 
 const admin = require('firebase-admin');
-const functions = require('../')();
 
 const assert = require('assert');
 
@@ -25,6 +24,22 @@ admin.initializeApp({
   credential: admin.credential.cert(serviceAccount),
   databaseURL: process.env.FIREBASE_DATABASE_URL
 });
+
+const functions = require('../')();
+
+describe('environment', () => {
+  it('should set process.env.GCLOUD_PROJECT and process.env.FIREBASE_CONFIG', () => {
+    assert.strictEqual(process.env.GCLOUD_PROJECT, serviceAccount.project_id);
+    
+    const expectedFirebaseConfig = JSON.stringify({
+      projectId: serviceAccount.project_id,
+      databaseURL: process.env.FIREBASE_DATABASE_URL,
+      storageBucket: undefined,
+    });
+
+    assert.deepEqual(process.env.FIREBASE_CONFIG, expectedFirebaseConfig);
+  })
+})
 
 describe('database', () => {
   before(callback => {
