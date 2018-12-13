@@ -21,8 +21,16 @@ Requires `firebase-functions` version 1+.
 ```js
 const admin = require('firebase-admin');
 
+// Initialize the admin sdk
+// This must be done before using firebase-functions-local
 // See https://firebase.google.com/docs/admin/setup#initialize_the_sdk
-const admin = admin.initializeApp({/* ... */});
+const serviceAccount = require('path/to/serviceAccountKey.json');
+
+const admin = admin.initializeApp({
+  credential: admin.credential.cert(serviceAccount),
+  databaseURL: 'https://your-project-id.firebaseio.com', // Replace these with your own values
+  storageBucket: 'your-project-id.appspot.com',
+});
 
 const functions = require('firebase-functions-local')({
   config: {}, // Set functions.config() values
